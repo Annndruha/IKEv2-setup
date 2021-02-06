@@ -98,27 +98,27 @@ read -r -p "Email address for sysadmin (e.g. j.bloggs@example.com): " EMAILADDR
 read -r -p "Desired SSH log-in port (default: 22): " SSHPORT
 SSHPORT=${SSHPORT:-22}
 
-read -r -p "New SSH log-in user name: " LOGINUSERNAME
+read -r -p "Account username: " LOGINUSERNAME
 
-CERTLOGIN="n"
-if [[ -s /root/.ssh/authorized_keys ]]; then
-  while true; do
-    read -r -p "Copy /root/.ssh/authorized_keys to new user and disable SSH password log-in [Y/n]? " CERTLOGIN
-    [[ ${CERTLOGIN,,} =~ ^(y(es)?)?$ ]] && CERTLOGIN=y
-    [[ ${CERTLOGIN,,} =~ ^no?$ ]] && CERTLOGIN=n
-    [[ $CERTLOGIN =~ ^(y|n)$ ]] && break
-  done
-fi
-
-while true; do
-  [[ ${CERTLOGIN} = "y" ]] && read -r -s -p "New SSH user's password (e.g. for sudo): " LOGINPASSWORD
-  [[ ${CERTLOGIN} != "y" ]] && read -r -s -p "New SSH user's log-in password (must be REALLY STRONG): " LOGINPASSWORD
-  echo
-  read -r -s -p "Confirm new SSH user's password: " LOGINPASSWORD2
-  echo
-  [[ "${LOGINPASSWORD}" = "${LOGINPASSWORD2}" ]] && break
-  echo "Passwords didn't match -- please try again"
-done
+#CERTLOGIN="n"
+#if [[ -s /root/.ssh/authorized_keys ]]; then
+#  while true; do
+#    read -r -p "Copy /root/.ssh/authorized_keys to new user and disable SSH password log-in [Y/n]? " CERTLOGIN
+#    [[ ${CERTLOGIN,,} =~ ^(y(es)?)?$ ]] && CERTLOGIN=y
+#    [[ ${CERTLOGIN,,} =~ ^no?$ ]] && CERTLOGIN=n
+#    [[ $CERTLOGIN =~ ^(y|n)$ ]] && break
+#  done
+#fi
+#
+#while true; do
+#  [[ ${CERTLOGIN} = "y" ]] && read -r -s -p "New SSH user's password (e.g. for sudo): " LOGINPASSWORD
+#  [[ ${CERTLOGIN} != "y" ]] && read -r -s -p "New SSH user's log-in password (must be REALLY STRONG): " LOGINPASSWORD
+#  echo
+#  read -r -s -p "Confirm new SSH user's password: " LOGINPASSWORD2
+#  echo
+#  [[ "${LOGINPASSWORD}" = "${LOGINPASSWORD2}" ]] && break
+#  echo "Passwords didn't match -- please try again"
+#done
 
 VPNIPPOOL="10.101.0.0/16"
 
@@ -136,68 +136,68 @@ debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Si
 apt-get -o Acquire::ForceIPv4=true install -y language-pack-en strongswan libstrongswan-standard-plugins strongswan-libcharon libcharon-standard-plugins libcharon-extra-plugins  iptables-persistent postfix mutt unattended-upgrades certbot uuid-runtime
 
 
-echo
-echo "--- Configuring firewall ---"
-echo
-
-# firewall
-# https://www.strongswan.org/docs/LinuxKongress2009-strongswan.pdf
-# https://wiki.strongswan.org/projects/strongswan/wiki/ForwardingAndSplitTunneling
-# https://www.zeitgeist.se/2013/11/26/mtu-woes-in-ipsec-tunnels-how-to-fix/
-
-iptables -P INPUT   ACCEPT
-iptables -P FORWARD ACCEPT
-iptables -P OUTPUT  ACCEPT
-
-iptables -F
-iptables -t nat -F
-iptables -t mangle -F
-
-# INPUT
-
-# accept anything already accepted
-iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-
-# accept anything on the loopback interface
-iptables -A INPUT -i lo -j ACCEPT
-
-# drop invalid packets
-iptables -A INPUT -m state --state INVALID -j DROP
-
-# rate-limit repeated new requests from same IP to any ports
-iptables -I INPUT -i "${ETH0ORSIMILAR}" -m state --state NEW -m recent --set
-iptables -I INPUT -i "${ETH0ORSIMILAR}" -m state --state NEW -m recent --update --seconds 300 --hitcount 60 -j DROP
-
-# accept (non-standard) SSH
-iptables -A INPUT -p tcp --dport "${SSHPORT}" -j ACCEPT
-
-
-# VPN
-
-# accept IPSec/NAT-T for VPN (ESP not needed with forceencaps, as ESP goes inside UDP)
-iptables -A INPUT -p udp --dport  500 -j ACCEPT
-iptables -A INPUT -p udp --dport 4500 -j ACCEPT
-
-# forward VPN traffic anywhere
-iptables -A FORWARD --match policy --pol ipsec --dir in  --proto esp -s "${VPNIPPOOL}" -j ACCEPT
-iptables -A FORWARD --match policy --pol ipsec --dir out --proto esp -d "${VPNIPPOOL}" -j ACCEPT
-
-# reduce MTU/MSS values for dumb VPN clients
-iptables -t mangle -A FORWARD --match policy --pol ipsec --dir in -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -p tcp -m tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1361:1536 -j TCPMSS --set-mss 1360
-
-# masquerade VPN traffic over eth0 etc.
-iptables -t nat -A POSTROUTING -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -m policy --pol ipsec --dir out -j ACCEPT  # exempt IPsec traffic from masquerading
-iptables -t nat -A POSTROUTING -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -j MASQUERADE
-
-
-# fall through to drop any other input and forward traffic
-
-iptables -A INPUT   -j DROP
-iptables -A FORWARD -j DROP
-
-iptables -L
-
-netfilter-persistent save
+#echo
+#echo "--- Configuring firewall ---"
+#echo
+#
+## firewall
+## https://www.strongswan.org/docs/LinuxKongress2009-strongswan.pdf
+## https://wiki.strongswan.org/projects/strongswan/wiki/ForwardingAndSplitTunneling
+## https://www.zeitgeist.se/2013/11/26/mtu-woes-in-ipsec-tunnels-how-to-fix/
+#
+#iptables -P INPUT   ACCEPT
+#iptables -P FORWARD ACCEPT
+#iptables -P OUTPUT  ACCEPT
+#
+#iptables -F
+#iptables -t nat -F
+#iptables -t mangle -F
+#
+## INPUT
+#
+## accept anything already accepted
+#iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+#
+## accept anything on the loopback interface
+#iptables -A INPUT -i lo -j ACCEPT
+#
+## drop invalid packets
+#iptables -A INPUT -m state --state INVALID -j DROP
+#
+## rate-limit repeated new requests from same IP to any ports
+#iptables -I INPUT -i "${ETH0ORSIMILAR}" -m state --state NEW -m recent --set
+#iptables -I INPUT -i "${ETH0ORSIMILAR}" -m state --state NEW -m recent --update --seconds 300 --hitcount 60 -j DROP
+#
+## accept (non-standard) SSH
+#iptables -A INPUT -p tcp --dport "${SSHPORT}" -j ACCEPT
+#
+#
+## VPN
+#
+## accept IPSec/NAT-T for VPN (ESP not needed with forceencaps, as ESP goes inside UDP)
+#iptables -A INPUT -p udp --dport  500 -j ACCEPT
+#iptables -A INPUT -p udp --dport 4500 -j ACCEPT
+#
+## forward VPN traffic anywhere
+#iptables -A FORWARD --match policy --pol ipsec --dir in  --proto esp -s "${VPNIPPOOL}" -j ACCEPT
+#iptables -A FORWARD --match policy --pol ipsec --dir out --proto esp -d "${VPNIPPOOL}" -j ACCEPT
+#
+## reduce MTU/MSS values for dumb VPN clients
+#iptables -t mangle -A FORWARD --match policy --pol ipsec --dir in -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -p tcp -m tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1361:1536 -j TCPMSS --set-mss 1360
+#
+## masquerade VPN traffic over eth0 etc.
+#iptables -t nat -A POSTROUTING -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -m policy --pol ipsec --dir out -j ACCEPT  # exempt IPsec traffic from masquerading
+#iptables -t nat -A POSTROUTING -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -j MASQUERADE
+#
+#
+## fall through to drop any other input and forward traffic
+#
+#iptables -A INPUT   -j DROP
+#iptables -A FORWARD -j DROP
+#
+#iptables -L
+#
+#netfilter-persistent save
 
 
 echo
@@ -290,45 +290,45 @@ ${VPNUSERNAME} : EAP \"${VPNPASSWORD}\"
 ipsec restart
 
 
-echo
-echo "--- User ---"
-echo
+#echo
+#echo "--- User ---"
+#echo
 
 # user + SSH
 
-id -u "${LOGINUSERNAME}" &>/dev/null || adduser --disabled-password --gecos "" "${LOGINUSERNAME}"
-echo "${LOGINUSERNAME}:${LOGINPASSWORD}" | chpasswd
-adduser "${LOGINUSERNAME}" sudo
+#id -u "${LOGINUSERNAME}" &>/dev/null || adduser --disabled-password --gecos "" "${LOGINUSERNAME}"
+#echo "${LOGINUSERNAME}:${LOGINPASSWORD}" | chpasswd
+#adduser "${LOGINUSERNAME}" sudo
+#
+#sed -r \
+#-e "s/^#?Port 22$/Port ${SSHPORT}/" \
+#-e 's/^#?LoginGraceTime (120|2m)$/LoginGraceTime 30/' \
+#-e 's/^#?PermitRootLogin yes$/PermitRootLogin no/' \
+#-e 's/^#?X11Forwarding yes$/X11Forwarding no/' \
+#-e 's/^#?UsePAM yes$/UsePAM no/' \
+#-i.original /etc/ssh/sshd_config
+#
+#grep -Fq 'jawj/IKEv2-setup' /etc/ssh/sshd_config || echo "
+## https://github.com/jawj/IKEv2-setup
+#MaxStartups 1
+#MaxAuthTries 2
+#UseDNS no" >> /etc/ssh/sshd_config
 
-sed -r \
--e "s/^#?Port 22$/Port ${SSHPORT}/" \
--e 's/^#?LoginGraceTime (120|2m)$/LoginGraceTime 30/' \
--e 's/^#?PermitRootLogin yes$/PermitRootLogin no/' \
--e 's/^#?X11Forwarding yes$/X11Forwarding no/' \
--e 's/^#?UsePAM yes$/UsePAM no/' \
--i.original /etc/ssh/sshd_config
-
-grep -Fq 'jawj/IKEv2-setup' /etc/ssh/sshd_config || echo "
-# https://github.com/jawj/IKEv2-setup
-MaxStartups 1
-MaxAuthTries 2
-UseDNS no" >> /etc/ssh/sshd_config
-
-if [[ $CERTLOGIN = "y" ]]; then
-  mkdir -p "/home/${LOGINUSERNAME}/.ssh"
-  chown "${LOGINUSERNAME}" "/home/${LOGINUSERNAME}/.ssh"
-  chmod 700 "/home/${LOGINUSERNAME}/.ssh"
-
-  cp "/root/.ssh/authorized_keys" "/home/${LOGINUSERNAME}/.ssh/authorized_keys"
-  chown "${LOGINUSERNAME}" "/home/${LOGINUSERNAME}/.ssh/authorized_keys"
-  chmod 600 "/home/${LOGINUSERNAME}/.ssh/authorized_keys"
-
-  sed -r \
-  -e "s/^#?PasswordAuthentication yes$/PasswordAuthentication no/" \
-  -i.allows_pwd /etc/ssh/sshd_config
-fi
-
-service ssh restart
+#if [[ $CERTLOGIN = "y" ]]; then
+#  mkdir -p "/home/${LOGINUSERNAME}/.ssh"
+#  chown "${LOGINUSERNAME}" "/home/${LOGINUSERNAME}/.ssh"
+#  chmod 700 "/home/${LOGINUSERNAME}/.ssh"
+#
+#  cp "/root/.ssh/authorized_keys" "/home/${LOGINUSERNAME}/.ssh/authorized_keys"
+#  chown "${LOGINUSERNAME}" "/home/${LOGINUSERNAME}/.ssh/authorized_keys"
+#  chmod 600 "/home/${LOGINUSERNAME}/.ssh/authorized_keys"
+#
+#  sed -r \
+#  -e "s/^#?PasswordAuthentication yes$/PasswordAuthentication no/" \
+#  -i.allows_pwd /etc/ssh/sshd_config
+#fi
+#
+#service ssh restart
 
 
 echo
