@@ -110,6 +110,7 @@ Configuration files, scripts and instructions are sent by email. They are also d
 ### Troubleshooting
 
 If things don't work out right away ...
+* If connection refused by authentication reasons, make sure that you delete all old certificates on client side
 
 * On the client: make sure you created the connection using the newly emailed `.mobileconfig` file or PowerShell commands. Setting it up manually via the OS GUI will _not_ work, since it will default to insecure ciphers which the server has not been configured to support. Also note that `.mobileconfig` files generated with earlier iterations of this script may no longer be compatible, since the configured ciphers have changed from time to time.
 
