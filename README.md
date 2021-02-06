@@ -1,5 +1,7 @@
 # IKEv2-setup
 
+**The main difference from [jawj/IKEv2-setup](https://github.com/jawj/IKEv2-setup) this fork is no affect on ssh and system users**
+
 ## Table of contents
 
   * [What?](#what)
@@ -52,23 +54,13 @@ Configuration files, scripts and instructions are sent by email. They are also d
 
 2. Start with a clean Ubuntu 20.04 or 18.04 Server installation. The cheapest VPSs offered by Linode, OVH, vps.ag, Google, Hetzner and Vultr, and Scaleway's ARM64-2GB, have all been tested working. On Scaleway, unblock SMTP ports in the admin panel and *hard* reboot the server first, or your configuration email will not be delivered. On Vultr, port 25 may also be blocked, but you won't know, and the only way to fix it is to open a support ticket.
 
-3. Optionally, set up [key-based SSH authentication](https://help.ubuntu.com/community/SSH/OpenSSH/Keys) (alternatively, this may have been handled automatically by your server provider, or you may choose to stick with password-based authentication). This may require you to run some or all of the following commands, with appropriate substitutions, on the machine you're going to be logging in from:
+3. On your new server installation, become `root`, download the script, give it execute permissions, and run it:
 
-       ssh-keygen -t ed25519 -C "me@my-domain.tld"      # if you need a new key, ed25519 is the latest and possibly most secure option
-       ssh-keygen -t rsa -b 4096 -C "me@my-domain.tld"  # alternatively, use RSA and go (4,096 bits) large
-
-       ssh root@myvpn.example.net  # if your host forces a password change before anything else (e.g. Hetzner), do it now, then exit
-       ssh-copy-id -i ~/.ssh/id_ed25519 root@myvpn.example.net  # copy your public key over to the VPN server
-       ssh root@myvpn.example.net  # log back in to the server for the next step ...
-
-4. On your new server installation, become `root`, download the script, give it execute permissions, and run it:
-
-       wget https://raw.githubusercontent.com/jawj/IKEv2-setup/master/setup.sh
+       wget https://raw.githubusercontent.com/Annndruha/IKEv2-setup/master/setup.sh
        chmod u+x setup.sh
        ./setup.sh
     
-5. You'll be prompted to enter all the necessary details after the software updates and installations complete. If you are not using key-based SSH authentication, **you *must* pick a really strong password** for the login user when prompted, or your server *will* be compromised. 
-
+5. You'll be prompted to enter all the necessary details after the software updates and installations complete.
     The part of your session where the script asks you questions should look something like this:
     
         --- Configuration: VPN settings ---
