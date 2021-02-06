@@ -345,9 +345,7 @@ sed -r \
 -i.original /etc/postfix/main.cf
 
 grep -Fq 'jawj/IKEv2-setup' /etc/aliases || echo "
-# https://github.com/jawj/IKEv2-setup
 root: ${EMAILADDR}
-${LOGINUSERNAME}: ${EMAILADDR}
 " >> /etc/aliases
 
 newaliases
@@ -374,7 +372,7 @@ echo
 echo "--- Creating configuration files ---"
 echo
 
-cd "/home/${LOGINUSERNAME}"
+# cd "/home/${LOGINUSERNAME}"
 
 cat << EOF > vpn-ios-or-mac.mobileconfig
 <?xml version='1.0' encoding='UTF-8'?>
@@ -616,7 +614,7 @@ EMAIL=$USER@$VPNHOST mutt -s "VPN configuration" -a vpn-ios-or-mac.mobileconfig 
 echo
 echo "--- How to connect ---"
 echo
-echo "Connection instructions have been emailed to you, and can also be found in your home directory, /home/${LOGINUSERNAME}"
+echo "Connection instructions have been emailed to you, and can also be found in your home directory"
 
 # necessary for IKEv2?
 # Windows: https://support.microsoft.com/en-us/kb/926179
