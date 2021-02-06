@@ -1,11 +1,7 @@
 #!/bin/bash -e
 
-# github.com/jawj/IKEv2-setup
-# Copyright (c) 2015 – 2020 George MacKerron
-# Released under the MIT licence: http://opensource.org/licenses/mit-license
-
 echo
-echo "=== https://github.com/jawj/IKEv2-setup ==="
+echo "=== https://github.com/Annndruha/IKEv2-setup ==="
 echo
 
 
@@ -18,13 +14,14 @@ function exit_badly {
 [[ $(id -u) -eq 0 ]] || exit_badly "Please re-run as root (e.g. sudo ./path/to/this/script)"
 
 
+
+
+
 echo "--- Adding repositories and installing utilities ---"
 echo
 
 export DEBIAN_FRONTEND=noninteractive
 
-# see https://github.com/jawj/IKEv2-setup/issues/66 and https://bugs.launchpad.net/subiquity/+bug/1783129
-# note: software-properties-common is required for add-apt-repository
 apt-get -o Acquire::ForceIPv4=true update
 apt-get -o Acquire::ForceIPv4=true install -y software-properties-common
 add-apt-repository universe
@@ -32,6 +29,9 @@ add-apt-repository restricted
 add-apt-repository multiverse
 
 apt-get -o Acquire::ForceIPv4=true install -y moreutils dnsutils
+
+
+
 
 
 echo
@@ -98,7 +98,7 @@ read -r -p "Email address for sysadmin (e.g. j.bloggs@example.com): " EMAILADDR
 read -r -p "Desired SSH log-in port (default: 22): " SSHPORT
 SSHPORT=${SSHPORT:-22}
 
-read -r -p "Account username: " LOGINUSERNAME
+# read -r -p "Account username: " LOGINUSERNAME
 
 #CERTLOGIN="n"
 #if [[ -s /root/.ssh/authorized_keys ]]; then
@@ -136,68 +136,70 @@ debconf-set-selections <<< "postfix postfix/main_mailer_type string 'Internet Si
 apt-get -o Acquire::ForceIPv4=true install -y language-pack-en strongswan libstrongswan-standard-plugins strongswan-libcharon libcharon-standard-plugins libcharon-extra-plugins  iptables-persistent postfix mutt unattended-upgrades certbot uuid-runtime
 
 
-#echo
-#echo "--- Configuring firewall ---"
-#echo
-#
-## firewall
-## https://www.strongswan.org/docs/LinuxKongress2009-strongswan.pdf
-## https://wiki.strongswan.org/projects/strongswan/wiki/ForwardingAndSplitTunneling
-## https://www.zeitgeist.se/2013/11/26/mtu-woes-in-ipsec-tunnels-how-to-fix/
-#
-#iptables -P INPUT   ACCEPT
-#iptables -P FORWARD ACCEPT
-#iptables -P OUTPUT  ACCEPT
-#
-#iptables -F
-#iptables -t nat -F
-#iptables -t mangle -F
-#
-## INPUT
-#
-## accept anything already accepted
-#iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
-#
-## accept anything on the loopback interface
-#iptables -A INPUT -i lo -j ACCEPT
-#
-## drop invalid packets
-#iptables -A INPUT -m state --state INVALID -j DROP
-#
-## rate-limit repeated new requests from same IP to any ports
-#iptables -I INPUT -i "${ETH0ORSIMILAR}" -m state --state NEW -m recent --set
-#iptables -I INPUT -i "${ETH0ORSIMILAR}" -m state --state NEW -m recent --update --seconds 300 --hitcount 60 -j DROP
-#
-## accept (non-standard) SSH
-#iptables -A INPUT -p tcp --dport "${SSHPORT}" -j ACCEPT
-#
-#
-## VPN
-#
-## accept IPSec/NAT-T for VPN (ESP not needed with forceencaps, as ESP goes inside UDP)
-#iptables -A INPUT -p udp --dport  500 -j ACCEPT
-#iptables -A INPUT -p udp --dport 4500 -j ACCEPT
-#
-## forward VPN traffic anywhere
-#iptables -A FORWARD --match policy --pol ipsec --dir in  --proto esp -s "${VPNIPPOOL}" -j ACCEPT
-#iptables -A FORWARD --match policy --pol ipsec --dir out --proto esp -d "${VPNIPPOOL}" -j ACCEPT
-#
-## reduce MTU/MSS values for dumb VPN clients
-#iptables -t mangle -A FORWARD --match policy --pol ipsec --dir in -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -p tcp -m tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1361:1536 -j TCPMSS --set-mss 1360
-#
-## masquerade VPN traffic over eth0 etc.
-#iptables -t nat -A POSTROUTING -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -m policy --pol ipsec --dir out -j ACCEPT  # exempt IPsec traffic from masquerading
-#iptables -t nat -A POSTROUTING -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -j MASQUERADE
-#
-#
-## fall through to drop any other input and forward traffic
-#
-#iptables -A INPUT   -j DROP
-#iptables -A FORWARD -j DROP
-#
-#iptables -L
-#
-#netfilter-persistent save
+echo
+echo "--- Configuring firewall ---"
+echo
+
+# firewall
+# https://www.strongswan.org/docs/LinuxKongress2009-strongswan.pdf
+# https://wiki.strongswan.org/projects/strongswan/wiki/ForwardingAndSplitTunneling
+# https://www.zeitgeist.se/2013/11/26/mtu-woes-in-ipsec-tunnels-how-to-fix/
+
+iptables -P INPUT   ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT  ACCEPT
+
+iptables -F
+iptables -t nat -F
+iptables -t mangle -F
+
+# INPUT
+
+# accept anything already accepted
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# accept anything on the loopback interface
+iptables -A INPUT -i lo -j ACCEPT
+
+# drop invalid packets
+iptables -A INPUT -m state --state INVALID -j DROP
+
+# rate-limit repeated new requests from same IP to any ports
+iptables -I INPUT -i "${ETH0ORSIMILAR}" -m state --state NEW -m recent --set
+iptables -I INPUT -i "${ETH0ORSIMILAR}" -m state --state NEW -m recent --update --seconds 300 --hitcount 60 -j DROP
+
+# accept (non-standard) SSH
+iptables -A INPUT -p tcp --dport "${SSHPORT}" -j ACCEPT
+
+
+# VPN
+
+# accept IPSec/NAT-T for VPN (ESP not needed with forceencaps, as ESP goes inside UDP)
+iptables -A INPUT -p udp --dport  500 -j ACCEPT
+iptables -A INPUT -p udp --dport 4500 -j ACCEPT
+
+# forward VPN traffic anywhere
+iptables -A FORWARD --match policy --pol ipsec --dir in  --proto esp -s "${VPNIPPOOL}" -j ACCEPT
+iptables -A FORWARD --match policy --pol ipsec --dir out --proto esp -d "${VPNIPPOOL}" -j ACCEPT
+
+# reduce MTU/MSS values for dumb VPN clients
+iptables -t mangle -A FORWARD --match policy --pol ipsec --dir in -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -p tcp -m tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1361:1536 -j TCPMSS --set-mss 1360
+
+# masquerade VPN traffic over eth0 etc.
+iptables -t nat -A POSTROUTING -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -m policy --pol ipsec --dir out -j ACCEPT  # exempt IPsec traffic from masquerading
+iptables -t nat -A POSTROUTING -s "${VPNIPPOOL}" -o "${ETH0ORSIMILAR}" -j MASQUERADE
+
+
+# fall through to drop any other input and forward traffic
+
+iptables -A INPUT   -j DROP
+iptables -A FORWARD -j DROP
+
+iptables -L
+netfilter-persistent save
+
+
+
 
 
 echo
